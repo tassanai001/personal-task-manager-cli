@@ -37,3 +37,9 @@
 - CLI must run offline; never add telemetry or network calls.
 - Store path defaults to `${HOME}/.ptm/tasks.json`; document overrides in quickstart if introduced.
 - Back up corrupted stores to `tasks.json.bak-<timestamp>` and surface actionable errors to users.
+
+## Codex Command Reference
+- Available prompts under `.codex/prompts`: `analyze`, `clarify`, `constitution`, `implement`, `plan`, `specify`, `tasks`.
+- Invoke a prompt with the pattern `*<prompt> <arguments>` (arguments optional); the CLI injects them into the corresponding markdown workflow.
+- Example: `clarify my task-01` runs the clarification workflow using "my task-01" as contextual input.
+- Always review each prompt's instructions before use; some (like `clarify`) require running prerequisite scripts or follow-up updates.

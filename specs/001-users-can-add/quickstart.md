@@ -1,7 +1,7 @@
 # Quickstart — Offline Task CLI MVP
 
 ## Prerequisites
-- Node.js 20.x and npm installed locally (no global network calls during runtime).
+- Node.js 20.x and npm installed locally (no network calls during CLI runtime).
 - Writable home directory to allow creation of `~/.ptm/tasks.json`.
 
 ## Installation
@@ -45,6 +45,7 @@ Sample output:
 ID                                   Priority  Status  Title
 3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20 high      todo    Write report
 ```
+- When multiple tasks exist, the default ordering is newest-first (`createdAt` descending) per Session 2025-09-29 clarification.
 
 Structured JSON:
 ```

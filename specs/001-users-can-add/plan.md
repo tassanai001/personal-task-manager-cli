@@ -1,101 +1,67 @@
 # Implementation Plan: Offline Task CLI MVP
 
-**Branch**: `001-users-can-add` | **Date**: 2025-09-29 | **Spec**: `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/spec.md`
-**Input**: Feature specification from `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/spec.md`
+**Branch**: `001-users-can-add` | **Date**: 2025-09-29 | **Spec**: /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/spec.md
+**Input**: Feature specification from /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/spec.md
 
 ## Summary
-- Deliver an offline-first `ptm` CLI that lets a single user add, list, complete (including `--undo`), and delete tasks persisted to `~/.ptm/tasks.json`.
-- Adopt a Node.js 20 + TypeScript stack with `commander` for commands, atomic JSON writes, and UUID-based task IDs in compliance with the constitution.
-- Apply TDD with `vitest` acceptance and unit suites to cover CLI flows, storage integrity, and error handling.
+Deliver an offline-first `ptm` CLI that lets a single operator add, list, complete (with `--undo`), and delete tasks while persisting to a single JSON file. Implementation relies on Node.js 20 with TypeScript 5, Commander for command wiring, Vitest with Execa for TDD, and atomic storage with corruption backups so the tool remains responsive for stores of up to 100 tasks.
 
 ## Technical Context
-**Language/Version**: Node.js 20 LTS with TypeScript 5.x (transpiled via `tsc` or executed with `tsx` during development)  
-**Primary Dependencies**: `commander` for CLI orchestration, `uuid` for IDs, and light filesystem utilities within Node's standard library  
-**Storage**: Single JSON document at `~/.ptm/tasks.json` with atomic temp-file writes and corruption backup to `tasks.json.bak-<timestamp>`  
-**Testing**: `vitest` runner using `execa` to spawn the CLI for acceptance tests plus focused unit coverage on storage and domain logic  
-**Target Platform**: Local macOS and Linux shells (bash/zsh); Windows support documented but not primary validation target  
-**Project Type**: Single-distribution CLI binary executed via `node dist/cli.js` (later packaged with `npm bin` alias)  
-**Performance Goals**: Command executions under ~200ms for stores with ≤5k tasks; atomic writes keep data safe during abrupt exits  
-**Constraints**: Offline-only behavior, single JSON persistence layer, zero telemetry, adherence to constitution principles P1–P5  
-**Scale/Scope**: Solo user workflow with tens to thousands of tasks; no multi-profile or sync features planned  
-**User-Provided Arguments**: None supplied for this /plan run; defaults from specification remain in effect
+**Language/Version**: Node.js 20.x with TypeScript 5 strict mode  
+**Primary Dependencies**: commander (CLI), uuid (ID generation), vitest & @vitest/coverage-istanbul (tests/coverage), execa (acceptance harness)  
+**Storage**: Local JSON at `${HOME}/.ptm/tasks.json` persisted via temp-file write + rename with corruption backups  
+**Testing**: Vitest for unit and acceptance specs executed through `npm test` with Execa subprocess orchestration  
+**Target Platform**: macOS and Linux terminals for a single local operator  
+**Project Type**: Single CLI binary compiled to `dist/` and executed via bin shim  
+**Performance Goals**: Commands complete in <200 ms and remain stable for ≤100 tasks as specified in clarifications  
+**Constraints**: Offline-only execution, no telemetry, single JSON store, deterministic exit codes, human + JSON outputs per constitution  
+**Scale/Scope**: Single task store for one user profile, sustaining ≤100 concurrent tasks without degradation  
+**Additional Inputs**: No supplemental arguments provided for this /plan run
 
 ## Constitution Check
-*Initial review prior to Phase 0*
-
-- [x] P1 — Follow SDD Flow: Staying within `/specify` → `/plan`; no code edits before `tasks.md` is approved.
-- [x] P2 — Simple, Local, No-Network: Design keeps all state in one local JSON file and avoids external calls.
-- [x] P3 — Clear CLI UX: Command roster fixed to `add`, `list`, `complete`, `delete` with documented flags and exit codes.
-- [x] P4 — Data Model Is the Source of Truth: Task schema mirrors constitution with UUIDs and ISO timestamps.
-- [x] P5 — Minimum Quality Gates: Plan mandates acceptance and unit tests plus README/CHANGELOG updates pre-release.
-- [x] Definition of Done: Deliverables align with CLI behavior, storage, tests, docs, and offline guarantee.
-
-*Post-design review (after Phase 1)*
-
-- [x] Re-checked constitution principles; no violations introduced by research, data-model, contracts, or quickstart artifacts.
+- [x] P1 — Follow SDD Flow: Working within `/specify → /plan`; artifacts scoped to /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/
+- [x] P2 — Simple, Local, No-Network: Plan maintains offline JSON persistence with atomic writes
+- [x] P3 — Clear CLI UX: Command set remains `add`, `list`, `complete --undo`, `delete` with deterministic exit codes
+- [x] P4 — Data Model Is the Source of Truth: Task schema locked to UUID/timestamp contract; storage design honors atomicity
+- [x] P5 — Minimum Quality Gates: Tests, docs, and lint tasks scheduled before implementation
+- [x] Definition of Done: Plan covers CLI behavior, persistence, tests, docs, and no-network guarantee
 
 ## Project Structure
-
-### Documentation (this feature)
 ```
 /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/
-├── plan.md              # /plan command output (this document)
-├── research.md          # Phase 0 findings
-├── data-model.md        # Phase 1 entity & validation details
-├── quickstart.md        # Phase 1 CLI usage & fixtures
-├── contracts/           # Phase 1 command/IO expectations
-└── tasks.md             # Phase 2 output (generated by /tasks)
+/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli
+/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/core
+/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/storage
+/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/tests/acceptance
+/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/tests/unit
+/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/docs
 ```
 
-### Source Code (repository root)
-```
-/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/
-├── src/
-│   ├── cli/             # Commander command definitions and option parsing
-│   ├── core/            # Task domain logic, validation, state transitions
-│   ├── storage/         # JSON persistence, atomic writes, backup handling
-│   └── utils/           # Shared helpers (logging, path resolution)
-├── tests/
-│   ├── acceptance/      # Vitest suites invoking CLI end-to-end via execa
-│   └── unit/            # Storage/domain unit tests
-├── docs/
-│   ├── README.md        # Installation & usage updates per DoD
-│   └── CHANGELOG.md     # Feature entry documenting CLI addition
-└── package.json         # Toolchain scripts (build, test, lint)
-```
-
-**Structure Decision**: Scaffold a TypeScript CLI workspace with `src`/`tests` mirroring the logical boundaries above; align docs folder with constitution DoD updates and keep specs isolated under `/specs/001-users-can-add/` for traceability.
+**Structure Decision**: Implementation keeps CLI surfaces in /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli, domain/state logic in /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/core, persistence helpers in /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/storage, with Vitest coverage under /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/tests per repository guidelines.
 
 ## Phase 0: Outline & Research
-- Consolidated runtime, CLI, persistence, testing, and undo semantics decisions in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/research.md`.
-- Resolved previously implicit constraints: atomic write mechanics, corruption backup behavior, and absence of external arguments from this session.
-- No [NEEDS CLARIFICATION] markers remain; ready to advance to design.
+- Consolidated runtime, CLI stack, storage, ID/timestamp, testing, undo semantics, and corruption recovery decisions in /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/research.md.
+- Validated clarifications from Session 2025-09-29 (undo support, default priority `medium`, newest-first listing, backup strategy) and recorded that no additional /plan arguments were supplied.
+- Confirmed there are no remaining `[NEEDS CLARIFICATION]` markers; Phase 0 requirements satisfied.
 
 ## Phase 1: Design & Contracts
-- Authored `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/data-model.md` to restate the Task schema, validation rules, and completion/undo transitions.
-- Produced `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/quickstart.md` detailing installation, command usage, undo workflow, and error codes.
-- Created `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/contracts/` documenting command contracts (`add`, `list`, `complete`, `delete`, storage resilience).
-- Ran `.specify/scripts/bash/update-agent-context.sh codex`, generating `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/AGENTS.md` with the current stack for assistant alignment.
+- Documented Task schema, validation rules, state transitions, and persistence guidelines in /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/data-model.md, aligning with clarified undo and backup behavior.
+- Authored CLI contracts in /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/contracts/ and user-facing flows in /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/quickstart.md, covering human and JSON outputs alongside validation errors and exit codes.
+- Ran `.specify/scripts/bash/update-agent-context.sh codex` to sync /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/AGENTS.md with current tooling decisions.
+- Post-design constitution check confirms continued compliance with P1–P5 and the Definition of Done.
 
 ## Phase 2: Task Planning Approach
-- Use `.specify/templates/tasks-template.md` via `/tasks` to enumerate ~15–20 tasks spanning acceptance tests, storage/domain units, CLI implementation, docs, and cleanup.
-- Order tasks TDD-first: acceptance failures → unit coverage → storage/core implementations → CLI wiring → documentation updates → release artifacts.
-- Flag parallelizable work (`[P]`) only when touching disjoint directories (e.g., docs vs. src) to respect P1 flow control.
-- Map each functional requirement (FR-001–FR-007) to at least one acceptance and one implementation task to maintain traceability.
-
-## Phase 3+: Future Implementation
-- **Phase 3** (/tasks): Generate numbered task list once plan is approved.
-- **Phase 4** (Implementation): Execute tasks sequentially, ensuring no scope deviation from this plan.
-- **Phase 5** (Validation): Run test suites, follow quickstart walkthrough, and document release artifacts prior to merge.
+- Captured dependency-ordered tasks in /Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/tasks.md, sequencing setup → failing tests → models → storage/core services → CLI wiring → docs/QA to preserve TDD.
+- Tasks include acceptance/unit coverage for each command, storage resilience work, documentation updates, and final validation gates, preparing for the `/tasks` execution step.
 
 ## Complexity Tracking
-No constitutional deviations identified; table intentionally left empty.
+_No deviations requiring justification._
 
 ## Progress Tracking
 **Phase Status**:
 - [x] Phase 0: Research complete (/plan command)
 - [x] Phase 1: Design complete (/plan command)
-- [x] Phase 2: Task planning complete (/plan command - describe approach only)
+- [x] Phase 2: Task planning complete (/plan command)
 - [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
@@ -104,7 +70,4 @@ No constitutional deviations identified; table intentionally left empty.
 - [x] Initial Constitution Check: PASS
 - [x] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved
-- [x] Complexity deviations documented (none required)
-
----
-*Based on Constitution v1.0.1 — see `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/.specify/memory/constitution.md`*
+- [ ] Complexity deviations documented

@@ -5,7 +5,7 @@
 ptm add --title <string> [--description <string>] [--priority <low|medium|high>]
 ```
 - Default priority: `medium`.
-- Description omitted leaves empty string in the store.
+- Omitting `--description` persists the field as `null` in the store.
 
 ## Success Response
 - stdout: `✔ Added task <uuid> (priority: <priority>)`
@@ -20,4 +20,4 @@ ptm add --title <string> [--description <string>] [--priority <low|medium|high>]
 | Invalid `--priority` value | *(none)* | `Invalid priority: <value>. Use low, medium, or high.` | `1` |
 
 ## Failure Modes
-- JSON parse failure before write → delegate to storage contract (see `storage.json` once created) to back up corrupt file and abort without mutation.
+- JSON parse failure before write → delegate to storage contract to back up corrupt file and abort without mutation.

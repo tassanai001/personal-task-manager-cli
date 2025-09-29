@@ -56,6 +56,12 @@ When creating this spec from a user prompt:
 ### Session 2025-09-29
 
 - Q: Should the CLI support reversing a completed task back to `todo`, or are tasks immutable once marked done? → A: Allow re-opening via flag on `ptm complete`
+- Q: How should task IDs be assigned so users can reference them across `add`, `list`, `complete`, and `delete`? → A: Random UUID v4 strings generated at creation
+- Q: What priority should the CLI assign when `ptm add` runs without a `--priority` flag? → A: Default to `medium` priority
+- Q: How should `ptm list` order tasks when no sort flag is provided? → A: Sort by creation time descending (newest first)
+- Q: When should the CLI create or rotate backup files if the JSON store becomes corrupted? → A: On every write failure before retrying
+- Q: What sustained task count should the CLI comfortably handle without degraded performance? → A: Up to 100 tasks
+- Q: What responsiveness target should the CLI meet to satisfy FR-006? → A: Commands must finish in ≤200 ms with ≤100 tasks
 
 ---
 
@@ -72,23 +78,25 @@ A solo operator launches the offline CLI to capture and track personal tasks. Wh
 
 ### Edge Cases
 - Missing task store file: CLI creates the JSON file at the default local path (`~/.ptm/tasks.json`) before proceeding.
+- Omitting `--priority`: CLI stores the task with `medium` priority and includes that in confirmations and list outputs.
 - Invalid priority flag or missing title: CLI rejects the command with a validation error message and non-zero exit code.
-- Concurrent edits or corrupted JSON: CLI warns, preserves a backup, and guides the user to resolve the conflict without losing data.
+- Concurrent edits or corrupted JSON: CLI warns, preserves a timestamped backup before retrying any write, and guides the user to resolve the conflict without losing data.
 - Attempting to complete or delete a nonexistent task ID: CLI surfaces an error and leaves stored data unchanged.
+- Listing tasks without `--sort`: CLI shows newest tasks first in both human-readable and JSON outputs.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
-- **FR-001**: CLI MUST allow users to add a task with a required title, optional description, and priority flag (`low`, `medium`, `high`).
-- **FR-002**: CLI MUST list tasks with filters for `status`, `priority`, and a `--json` option for machine-readable output.
+- **FR-001**: CLI MUST allow users to add a task with a required title, optional description, and priority flag (`low`, `medium`, `high`), assign a random UUID v4 identifier for later reference, and default to `medium` priority when unspecified.
+- **FR-002**: CLI MUST list tasks with filters for `status`, `priority`, and a `--json` option for machine-readable output, defaulting to newest-first ordering when no explicit sort is provided.
 - **FR-003**: CLI MUST update a task's status to `done` when the user completes it, record `completedAt`, and support an `--undo` flag on `ptm complete` to revert the task to `todo` and clear `completedAt`.
 - **FR-004**: CLI MUST delete a specified task by ID and confirm removal to the user.
-- **FR-005**: CLI MUST persist all task mutations to a single local JSON file using atomic write semantics and create the file if missing.
-- **FR-006**: CLI MUST operate entirely offline with no network or authentication requirements.
+- **FR-005**: CLI MUST persist all task mutations to a single local JSON file using atomic write semantics, create the file if missing, and before retrying writes after a failure, rotate a timestamped backup of the previous store.
+- **FR-006**: CLI MUST operate entirely offline with no network or authentication requirements and maintain responsive interactions, defined as each command completing in ≤200 ms while managing stores up to 100 tasks.
 - **FR-007**: CLI MUST enforce validation errors with descriptive stderr output and non-zero exit codes when inputs are invalid.
 
 ### Key Entities *(include if feature involves data)*
-- **Task**: Represents an individual work item with properties `id`, `title`, `description`, `priority`, `status`, `createdAt`, and `completedAt`.
+- **Task**: Represents an individual work item with properties `id`, `title`, `description`, `priority`, `status`, `createdAt`, and `completedAt`, where `id` is a UUID v4 string unique across the store.
 - **Task Store**: The local JSON document (`~/.ptm/tasks.json` by default) that stores an array of tasks and enforces schema integrity and atomic writes.
 
 ---
