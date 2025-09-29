@@ -2,61 +2,78 @@
 
 ## Prerequisites
 - Node.js 20.x and npm installed locally (no network calls during CLI runtime).
-- Writable home directory to allow creation of `~/.ptm/tasks.json`.
+- Writable home directory to allow creation of `~/.ptm/tasks.json` (override with `PTM_HOME` for tests).
 
 ## Installation
-```
+```bash
 # from repository root
 npm install
 npm run build   # compiles TypeScript to dist/
 ```
 
 Add the CLI to your PATH during development:
-```
+```bash
 export PATH="$(pwd)/bin:$PATH"
 ```
-(The `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/bin/ptm` shim will execute `node dist/cli.js`.)
+(`bin/ptm` invokes `node dist/cli/index.js`.)
 
 ## First Run
-```
+```bash
 ptm list
 ```
-- Creates `~/.ptm/tasks.json` if missing with an empty `tasks` array.
-- Returns exit code `0` and prints "No tasks yet" when the store is empty.
-
-## Adding Tasks
+Output:
 ```
-ptm add --title "Write report" --description "Draft Q3 summary" --priority high
-```
-Expected output:
-```
-✔ Added task 3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20 (priority: high)
+No tasks yet
 ```
 - Exit code: `0`
-- Persists the new task with `status="todo"`.
+- Creates `~/.ptm/tasks.json` with `{ "tasks": [] }` if the store is missing.
+
+## Adding Tasks
+```bash
+ptm add --title "Write report" --description "Draft Q3 summary" --priority high
+```
+Output:
+```
+✔ Added task 00000000-0000-0000-0000-000000000001 (priority: high)
+```
+- Exit code: `0`
+- Persists the task with `status="todo"` and a generated UUID v4.
+
+Adding a second task without `--priority` defaults to `medium`:
+```
+ptm add --title "Plan sprint"
+✔ Added task 00000000-0000-0000-0000-000000000002 (priority: medium)
+```
 
 ## Listing Tasks
-Human-readable:
+```bash
+ptm list
 ```
-ptm list --priority high
+Table output (newest first):
 ```
-Sample output:
+ID                                    Priority  Status  Title
+00000000-0000-0000-0000-000000000002  medium    todo    Plan sprint
+00000000-0000-0000-0000-000000000001  high      todo    Write report
 ```
-ID                                   Priority  Status  Title
-3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20 high      todo    Write report
-```
-- When multiple tasks exist, the default ordering is newest-first (`createdAt` descending) per Session 2025-09-29 clarification.
 
-Structured JSON:
-```
+JSON mode:
+```bash
 ptm list --json
 ```
-Sample output:
-```json
+```
 {
   "tasks": [
     {
-      "id": "3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20",
+      "id": "00000000-0000-0000-0000-000000000002",
+      "title": "Plan sprint",
+      "description": null,
+      "priority": "medium",
+      "status": "todo",
+      "createdAt": "2025-09-29T17:00:00.000Z",
+      "completedAt": null
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
       "title": "Write report",
       "description": "Draft Q3 summary",
       "priority": "high",
@@ -68,54 +85,56 @@ Sample output:
 }
 ```
 
+Filters:
+- `--priority <low|medium|high>`
+- `--status <todo|done>`
+
 ## Completing Tasks
-```
-ptm complete 3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20
+```bash
+ptm complete 00000000-0000-0000-0000-000000000001
 ```
 Output:
 ```
-✔ Completed task 3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20
+✔ Completed task 00000000-0000-0000-0000-000000000001
 ```
-- Sets `status="done"` and records `completedAt`.
-- Exit code: `0`
+- Sets `status="done"` and stamps `completedAt`.
 
 Undo completion:
-```
-ptm complete 3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20 --undo
+```bash
+ptm complete 00000000-0000-0000-0000-000000000001 --undo
 ```
 Output:
 ```
-↺ Reopened task 3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20
+↺ Reopened task 00000000-0000-0000-0000-000000000001
 ```
 - Restores `status="todo"` and clears `completedAt`.
 
 ## Deleting Tasks
-```
-ptm delete 3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20
+```bash
+ptm delete 00000000-0000-0000-0000-000000000002
 ```
 Output:
 ```
-✖ Deleted task 3b1fc8c8-1a8a-4651-89d3-5dbe8bcd9f20
+✖ Deleted task 00000000-0000-0000-0000-000000000002
 ```
 - Removes the task from the JSON store.
-- Exit code: `0`
 
 ## Error Handling
-- Missing required flags (e.g., `--title`) emit a validation message on stderr and exit with code `1`.
-- Nonexistent IDs trigger an error "Task not found" on stderr and exit code `2`.
-- Corrupted `tasks.json` causes the CLI to back up the file to `tasks.json.bak-<timestamp>`, print recovery instructions, and exit with code `3`.
+- Missing required flags emit descriptive validation errors on stderr and exit with code `1`.
+- Unknown task IDs surface `Task not found: <id>` on stderr and exit with code `2`.
+- Corrupted stores trigger a backup (`tasks.json.bak-<timestamp>`), an instructional message, and exit with code `3`.
 
 ## Cleanup & Recovery
-- To reset the store, delete `~/.ptm/tasks.json`; the CLI will recreate it on the next command run.
-- Backups remain alongside the store file for manual merge or inspection.
+- Delete `~/.ptm/tasks.json` to reset; the CLI will recreate it on the next command run.
+- Inspect backups (`tasks.json.bak-*`) to recover data after corruption.
 
 ## Performance & Offline Verification
-```
+```bash
 npx vitest run tests/acceptance/performance.spec.ts
 ```
-- Seeds a fixture store with 100 tasks and exercises `ptm add`, `ptm list`, `ptm complete --undo`, and `ptm delete`.
-- Fails if any command exceeds the ≤200 ms target or performs a network call (the harness asserts no outbound sockets).
+- Seeds 100 tasks, runs every CLI command, and enforces the ≤200 ms latency target.
+- Throws if any network primitive (`net`, `http`, `https`, `dns`) is invoked.
 
 ## Next Steps
-- Run `npm test` to execute the full Vitest suite once implementation tasks are complete (includes the performance harness).
-- Update `docs/README.md` and `docs/CHANGELOG.md` to reflect the command usage and verification workflow during Phase 4.
+- Run `npm test` to execute the full Vitest suite (includes acceptance + performance harness).
+- Keep `docs/README.md` and `docs/CHANGELOG.md` updated when shipping new functionality.

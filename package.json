@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Offline personal task manager CLI built with TypeScript and Commander",
   "type": "module",
-  "main": "dist/cli.js",
+  "main": "dist/cli/index.js",
   "bin": {
     "ptm": "bin/ptm"
   },
@@ -28,6 +28,8 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/uuid": "9.0.7",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
     "@vitest/coverage-istanbul": "^1.6.0",
