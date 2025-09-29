@@ -1,0 +1,41 @@
+{
+  "name": "personal-task-manager-cli",
+  "version": "0.1.0",
+  "description": "Offline personal task manager CLI built with TypeScript and Commander",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "ptm": "bin/ptm"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "cli",
+    "tasks",
+    "offline",
+    "commander"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "@vitest/coverage-istanbul": "^1.6.0",
+    "eslint": "^8.57.0",
+    "execa": "^8.0.1",
+    "prettier": "^3.2.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}
