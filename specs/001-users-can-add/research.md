@@ -42,6 +42,13 @@
   - **Jest**: Similar capability but heavier ESM configuration.
   - **bats**: Shell tests would duplicate logic already covered by TypeScript integration tests.
 
+## Performance & Offline Verification
+- **Decision**: Add a dedicated Vitest acceptance harness that seeds a 100-task store, times `ptm` commands, and fails if latency exceeds ≤200 ms or a network call is attempted.
+- **Rationale**: Provides automated enforcement for FR-006 and constitution principles P2/P5 without relying on manual timing.
+- **Alternatives Considered**:
+  - **Manual benchmarking**: Prone to drift and lacks CI gate.
+  - **External profiling tool**: Adds dependencies and potential network access in conflict with P2.
+
 ## Error Handling & Recovery
 - **Decision**: Detect JSON corruption, back up the invalid file to `tasks.json.bak-<timestamp>`, and exit with actionable guidance before retrying writes.
 - **Rationale**: Meets specification edge cases without risking silent data loss.

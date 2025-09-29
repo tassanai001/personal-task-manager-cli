@@ -62,6 +62,7 @@ When creating this spec from a user prompt:
 - Q: When should the CLI create or rotate backup files if the JSON store becomes corrupted? → A: On every write failure before retrying
 - Q: What sustained task count should the CLI comfortably handle without degraded performance? → A: Up to 100 tasks
 - Q: What responsiveness target should the CLI meet to satisfy FR-006? → A: Commands must finish in ≤200 ms with ≤100 tasks
+- Q: How will FR-006 compliance be verified in practice? → A: Add an automated performance/offline verification task between test and polish phases to seed 100 tasks, time commands, and fail if thresholds or offline rules break
 
 ---
 
@@ -75,6 +76,7 @@ A solo operator launches the offline CLI to capture and track personal tasks. Wh
 2. **Given** a task with status `todo`, **When** the user runs `ptm complete <id>`, **Then** the CLI updates the task to status `done`, stamps `completedAt`, and the change is reflected when listing tasks.
 3. **Given** multiple tasks in different priorities, **When** the user runs `ptm list --priority low`, **Then** only low-priority tasks are shown in both human-readable and `--json` formats.
 4. **Given** a stale or unnecessary task, **When** the user runs `ptm delete <id>`, **Then** the CLI removes the task from the JSON file and confirms removal.
+5. **Given** a seeded store containing 100 tasks and the automated performance harness, **When** the harness exercises `ptm add`, `ptm list`, `ptm complete --undo`, and `ptm delete` offline, **Then** each command completes in ≤200 ms and the harness fails if a network dependency is detected.
 
 ### Edge Cases
 - Missing task store file: CLI creates the JSON file at the default local path (`~/.ptm/tasks.json`) before proceeding.
@@ -83,6 +85,7 @@ A solo operator launches the offline CLI to capture and track personal tasks. Wh
 - Concurrent edits or corrupted JSON: CLI warns, preserves a timestamped backup before retrying any write, and guides the user to resolve the conflict without losing data.
 - Attempting to complete or delete a nonexistent task ID: CLI surfaces an error and leaves stored data unchanged.
 - Listing tasks without `--sort`: CLI shows newest tasks first in both human-readable and JSON outputs.
+- Automated performance regression: The verification suite seeds roughly 100 tasks, exercises the CLI offline, and fails if any command exceeds the ≤200 ms target or attempts a network call.
 
 ## Requirements *(mandatory)*
 
@@ -92,7 +95,7 @@ A solo operator launches the offline CLI to capture and track personal tasks. Wh
 - **FR-003**: CLI MUST update a task's status to `done` when the user completes it, record `completedAt`, and support an `--undo` flag on `ptm complete` to revert the task to `todo` and clear `completedAt`.
 - **FR-004**: CLI MUST delete a specified task by ID and confirm removal to the user.
 - **FR-005**: CLI MUST persist all task mutations to a single local JSON file using atomic write semantics, create the file if missing, and before retrying writes after a failure, rotate a timestamped backup of the previous store.
-- **FR-006**: CLI MUST operate entirely offline with no network or authentication requirements and maintain responsive interactions, defined as each command completing in ≤200 ms while managing stores up to 100 tasks.
+- **FR-006**: CLI MUST operate entirely offline with no network or authentication requirements and maintain responsive interactions, defined as each command completing in ≤200 ms while managing stores up to 100 tasks. Compliance MUST be enforced by an automated performance/offline verification suite that seeds a 100-task store, measures command runtimes, and fails if any run exceeds the threshold or any network dependency is introduced.
 - **FR-007**: CLI MUST enforce validation errors with descriptive stderr output and non-zero exit codes when inputs are invalid.
 
 ### Key Entities *(include if feature involves data)*

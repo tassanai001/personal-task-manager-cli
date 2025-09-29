@@ -8,7 +8,7 @@
 1. Load plan.md to confirm runtime (Node.js 20 + TypeScript 5), CLI scope, and storage path `${HOME}/.ptm/tasks.json`.
 2. Load supplemental design docs:
    → data-model.md: Entities Task, TaskStore + validation/state rules.
-   → contracts/: CLI command + storage contracts (add, list, complete, delete, storage).
+   → contracts/: CLI command, storage, and performance harness specs (add, list, complete, delete, storage, performance).
    → quickstart.md: End-to-end scenario and expected outputs.
    → research.md: Technical decisions (commander, uuid, atomic writes, vitest/execa).
 3. Generate dependency-ordered tasks:
@@ -62,26 +62,30 @@
 - [ ] T009 [P] Create failing end-to-end spec `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/tests/acceptance/quickstart.spec.ts` that walks quickstart story (first run, add, list human+JSON, complete, undo, delete) using a temp HOME directory.
 - [ ] T010 [P] Create failing unit spec `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/tests/unit/task-domain.spec.ts` capturing data-model validations (title length, priority enum, status/completedAt coupling, unique IDs).
 
+## Phase 3.2.5: Performance Harness
+- [ ] T011 [P] Create failing acceptance spec `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/tests/acceptance/performance.spec.ts` per `contracts/performance.md`: seed a 100-task store fixture, time `ptm add/list/complete --undo/delete`, assert ≤200 ms per command, and fail if any network access is detected.
+
+
 ## Phase 3.3: Models & Domain Foundations
-- [ ] T011 [P] Implement Task entity in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/core/task.ts`: define TypeScript interfaces, default priority helper, validation utilities enforcing data-model rules.
-- [ ] T012 [P] Implement TaskStore entity in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/core/taskStore.ts`: represent `{ tasks: Task[] }`, provide selectors for newest-first sorting and lookup helpers used by domain services.
+- [ ] T012 [P] Implement Task entity in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/core/task.ts`: define TypeScript interfaces, default priority helper, validation utilities enforcing data-model rules.
+- [ ] T013 [P] Implement TaskStore entity in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/core/taskStore.ts`: represent `{ tasks: Task[] }`, provide selectors for newest-first sorting and lookup helpers used by domain services.
 
 ## Phase 3.4: Core Services & Endpoints
-- [ ] T013 Implement JSON storage service in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/storage/jsonStore.ts`: load/save with atomic temp files, fsync, backup on parse failure, directory bootstrap, and error mapping expected by T008.
-- [ ] T014 Implement domain task service in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/core/taskService.ts`: expose `addTask`, `listTasks`, `completeTask`, `undoComplete`, `deleteTask` using Task/TaskStore validators and storage service, ensuring deterministic exit codes and ID uniqueness.
-- [ ] T015 Implement CLI bootstrap in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/index.ts`: configure Commander program, global options (`--json`, `--priority`, `--status`, `--undo`), shared error handler, and inject storage path resolver.
-- [ ] T016 Implement `ptm add` handler in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/commands/add.ts`: wire flags, call task service, emit success glyph/output, surface validation errors per contract.
-- [ ] T017 Implement `ptm list` handler in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/commands/list.ts`: support filters, newest-first default, table rendering, and JSON serialization per contract + quickstart.
-- [ ] T018 Implement `ptm complete` handler in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/commands/complete.ts`: support `<id>` arg, `--undo`, timestamp management, and error reporting per contract.
-- [ ] T019 Implement `ptm delete` handler in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/commands/delete.ts`: enforce required ID, integrate with task service, and use contract messaging.
-- [ ] T020 Implement CLI presenters/utilities in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/presenters.ts`: shared formatting for tabular/JSON output, unicode glyphs, and stderr messaging reused by command handlers.
-- [ ] T021 Integrate distribution assets: create `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/bin/ptm` Node shim, add `bin` mapping in `package.json`, ensure `npm run build` emits `dist/cli.js` via `tsc` and updates CLI entry in `docs/README.md` usage examples.
+- [ ] T014 Implement JSON storage service in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/storage/jsonStore.ts`: load/save with atomic temp files, fsync, backup on parse failure, directory bootstrap, and error mapping expected by T008.
+- [ ] T015 Implement domain task service in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/core/taskService.ts`: expose `addTask`, `listTasks`, `completeTask`, `undoComplete`, `deleteTask` using Task/TaskStore validators and storage service, ensuring deterministic exit codes and ID uniqueness.
+- [ ] T016 Implement CLI bootstrap in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/index.ts`: configure Commander program, global options (`--json`, `--priority`, `--status`, `--undo`), shared error handler, and inject storage path resolver.
+- [ ] T017 Implement `ptm add` handler in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/commands/add.ts`: wire flags, call task service, emit success glyph/output, surface validation errors per contract.
+- [ ] T018 Implement `ptm list` handler in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/commands/list.ts`: support filters, newest-first default, table rendering, and JSON serialization per contract + quickstart.
+- [ ] T019 Implement `ptm complete` handler in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/commands/complete.ts`: support `<id>` arg, `--undo`, timestamp management, and error reporting per contract.
+- [ ] T020 Implement `ptm delete` handler in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/commands/delete.ts`: enforce required ID, integrate with task service, and use contract messaging.
+- [ ] T021 Implement CLI presenters/utilities in `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/src/cli/presenters.ts`: shared formatting for tabular/JSON output, unicode glyphs, and stderr messaging reused by command handlers.
+- [ ] T022 Integrate distribution assets: create `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/bin/ptm` Node shim, add `bin` mapping in `package.json`, ensure `npm run build` emits `dist/cli.js` via `tsc` and updates CLI entry in `docs/README.md` usage examples.
 
 ## Phase 3.5: Polish & Verification
-- [ ] T022 [P] Update `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/docs/README.md` with install, PATH export, command examples, and storage/backup behavior aligned with quickstart.
-- [ ] T023 [P] Update `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/docs/CHANGELOG.md` noting Offline Task CLI MVP, undo support, and storage safeguards.
-- [ ] T024 [P] Refresh `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/quickstart.md` with actual CLI transcripts captured from passing tests (human + JSON outputs, error samples).
-- [ ] T025 [P] Run final quality gate: execute `npm run lint`, `npm test`, `npm run build`, archive command outputs under `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/validation.log`, and confirm coverage ≥90%.
+- [ ] T023 [P] Update `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/docs/README.md` with install, PATH export, command examples, and storage/backup behavior aligned with quickstart.
+- [ ] T024 [P] Update `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/docs/CHANGELOG.md` noting Offline Task CLI MVP, undo support, and storage safeguards.
+- [ ] T025 [P] Refresh `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/quickstart.md` with actual CLI transcripts captured from passing tests (human + JSON outputs, error samples).
+- [ ] T026 [P] Run final quality gate: execute `npm run lint`, `npm test`, `npm run build`, archive command outputs under `/Users/tassanaiyeeton/projects/learn/personal-task-manager-cli/specs/001-users-can-add/validation.log`, and confirm coverage ≥90%.
 
 ## Parallel Execution Guidance
 After completing setup (T001-T003), schedule independent [P] test authoring:
@@ -93,14 +97,15 @@ specify tasks run --id T007 &
 specify tasks run --id T008 &
 specify tasks run --id T009 &
 specify tasks run --id T010 &
+specify tasks run --id T011 &
 wait
 ```
-Post-model implementations (T011-T012), Task entities can unblock storage (T013) while CLI presenters (T020) may begin once command handlers (T016-T019) finish. Polish tasks (T022-T025) can run together after integration task T021 and successful test run.
+Post-model implementations (T012-T013), Task entities can unblock storage (T014) while CLI presenters (T021) may begin once command handlers (T017-T020) finish. Polish tasks (T023-T026) can run together after integration task T022 and successful test run.
 
 ## Dependency Notes
 - T001 → prerequisite for all subsequent tasks; T002 depends on T001 to configure TypeScript-aware scripts; T003 depends on T001-T002 to scaffold matching structure.
-- Tests (T004-T010) require setup (T001-T003); they must all exist and fail before implementing models/services.
-- T011 depends on T004-T010 for guiding assertions; T012 depends on T011; T013 depends on T012 to persist validated structures; T014 depends on T011-T013.
-- CLI bootstrap/handlers (T015-T019) depend on domain service (T014) and corresponding acceptance specs; presenters (T020) depend on handlers to know formatting needs.
-- Distribution task T021 depends on T015-T020 to expose finalized commands.
-- Polish tasks (T022-T025) depend on running CLI via built artifacts (T021) and green test suite; validation log in T025 confirms Definition of Done.
+- Tests (T004-T011) require setup (T001-T003); they must all exist and fail before implementing models/services.
+- T012 depends on T004-T011 for guiding assertions; T013 depends on T012; T014 depends on T013 to persist validated structures; T015 depends on T012-T014.
+- CLI bootstrap/handlers (T016-T020) depend on domain service (T015) and corresponding acceptance specs (T004-T011); presenters (T021) depend on handlers to know formatting needs.
+- Distribution task T022 depends on T016-T021 to expose finalized commands.
+- Polish tasks (T023-T026) depend on running CLI via built artifacts (T022) and green test suite; validation log in T026 confirms Definition of Done.

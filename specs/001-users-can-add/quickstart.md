@@ -109,6 +109,13 @@ Output:
 - To reset the store, delete `~/.ptm/tasks.json`; the CLI will recreate it on the next command run.
 - Backups remain alongside the store file for manual merge or inspection.
 
+## Performance & Offline Verification
+```
+npx vitest run tests/acceptance/performance.spec.ts
+```
+- Seeds a fixture store with 100 tasks and exercises `ptm add`, `ptm list`, `ptm complete --undo`, and `ptm delete`.
+- Fails if any command exceeds the ≤200 ms target or performs a network call (the harness asserts no outbound sockets).
+
 ## Next Steps
-- Run `npm test` to execute Vitest suites once implementation tasks are complete.
-- Update `docs/README.md` and `docs/CHANGELOG.md` to reflect the command usage outlined above during Phase 4.
+- Run `npm test` to execute the full Vitest suite once implementation tasks are complete (includes the performance harness).
+- Update `docs/README.md` and `docs/CHANGELOG.md` to reflect the command usage and verification workflow during Phase 4.
