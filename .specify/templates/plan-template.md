@@ -9,8 +9,8 @@
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
 2. Fill Technical Context (scan for NEEDS CLARIFICATION)
-   → Detect Project Type from file system structure or context (web=frontend+backend, mobile=app+api)
-   → Set Structure Decision based on project type
+   → Capture target runtime (e.g., Node.js, Python, Go) and CLI expectations
+   → Record storage path strategy and testing approach
 3. Fill the Constitution Check section based on the content of the constitution document.
 4. Evaluate Constitution Check section below
    → If violations exist: Document in Complexity Tracking
@@ -35,19 +35,24 @@
 
 ## Technical Context
 **Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Primary Dependencies**: [e.g., Click, Cobra, Commander.js or NEEDS CLARIFICATION]  
+**Storage**: [e.g., Local JSON file, SQLite fallback, in-memory stub or N/A]  
+**Testing**: [e.g., pytest, Go test, Node tap, bats or NEEDS CLARIFICATION]  
+**Target Platform**: [e.g., macOS, Linux, Windows, containerized CLI or NEEDS CLARIFICATION]
+**Project Type**: [single CLI, CLI with background service, multi-binary toolchain or NEEDS CLARIFICATION]  
+**Performance Goals**: [e.g., command completes <200ms, handles 10k tasks, minimal memory footprint or NEEDS CLARIFICATION]  
+**Constraints**: [e.g., offline-only, single JSON file, no telemetry, limited filesystem permissions or NEEDS CLARIFICATION]  
+**Scale/Scope**: [e.g., number of concurrent tasks, expected data size, multi-profile support or NEEDS CLARIFICATION]
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] P1 — Follow SDD Flow: Plan follows `/specify` → `/plan` → `/tasks` and stays within approved scope.
+- [ ] P2 — Simple, Local, No-Network: Feature preserves offline operation and single JSON persistence.
+- [ ] P3 — Clear CLI UX: Command coverage, flags, and exit codes remain defined or updated with rationale.
+- [ ] P4 — Data Model Is the Source of Truth: Task schema changes are intentional, documented, and migration-safe.
+- [ ] P5 — Minimum Quality Gates: Acceptance/unit tests and doc updates are scheduled before implementation.
+- [ ] Definition of Done: Deliverables align with DoD checklist (CLI behavior, storage, tests, docs, no network).
 
 ## Project Structure
 
@@ -63,46 +68,20 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 ```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+├── cli/             # argument parsing and command execution
+├── core/            # task domain logic and validation
+├── storage/         # JSON persistence helpers (atomic writes)
+└── utils/           # shared utilities if needed
 
 tests/
-├── contract/
-├── integration/
-└── unit/
+├── acceptance/      # high-level CLI scenarios
+└── unit/            # storage and state transition tests
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+docs/
+├── README.md
+└── CHANGELOG.md
 ```
 
 **Structure Decision**: [Document the selected structure and reference the real
@@ -137,19 +116,20 @@ directories captured above]
    - Validation rules from requirements
    - State transitions if applicable
 
-2. **Generate API contracts** from functional requirements:
-   - For each user action → endpoint
-   - Use standard REST/GraphQL patterns
-   - Output OpenAPI/GraphQL schema to `/contracts/`
+2. **Define CLI command contracts** from functional requirements:
+   - For each command or flag change → document arguments, prompts, exit codes
+   - Capture human-readable output and `--json` payload expectations in `quickstart.md`
+   - Store structured command specs or golden fixtures in `/contracts/`
 
-3. **Generate contract tests** from contracts:
-   - One test file per endpoint
-   - Assert request/response schemas
-   - Tests must fail (no implementation yet)
+3. **Generate acceptance tests** from command contracts:
+   - One failing test per command/flag scenario in `tests/acceptance`
+   - Include error cases for invalid input, missing files, and conflicting IDs
+   - Record command invocations and expected stdout/stderr artifacts
 
-4. **Extract test scenarios** from user stories:
-   - Each story → integration test scenario
-   - Quickstart test = story validation steps
+4. **Detail data model impacts**:
+   - Update `data-model.md` with field changes, validation rules, and state transitions
+   - Describe migration steps if schema evolves
+   - Note atomic write strategy and recovery behavior
 
 5. **Update agent file incrementally** (O(1) operation):
    - Run `.specify/scripts/bash/update-agent-context.sh codex`
@@ -166,19 +146,18 @@ directories captured above]
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
-- Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+- Load `.specify/templates/tasks-template.md` as baseline guidance.
+- Derive acceptance test tasks from the documented CLI command contracts.
+- Translate data-model updates into storage/unit test tasks and migration work.
+- Define implementation tasks for CLI command handlers, output formatting, and persistence wiring.
+- Schedule documentation tasks (README, CHANGELOG) tied to DoD items.
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation 
-- Dependency order: Models before services before UI
-- Mark [P] for parallel execution (independent files)
+- Preserve TDD: acceptance tests → unit tests → command implementation → docs.
+- Implement storage/core logic before wiring CLI surfaces.
+- Mark \[P\] only when tasks touch different files/directories.
 
-**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+**Estimated Output**: 15-20 numbered, ordered tasks in tasks.md
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -216,4 +195,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.0.0 - See `/memory/constitution.md`*

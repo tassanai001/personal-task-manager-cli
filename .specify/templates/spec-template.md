@@ -40,10 +40,11 @@
 ### For AI Generation
 When creating this spec from a user prompt:
 1. **Mark all ambiguities**: Use [NEEDS CLARIFICATION: specific question] for any assumption you'd need to make
-2. **Don't guess**: If the prompt doesn't specify something (e.g., "login system" without auth method), mark it
+2. **Don't guess**: If the prompt doesn't specify something (e.g., "store tasks" without path or format), mark it
 3. **Think like a tester**: Every vague requirement should fail the "testable and unambiguous" checklist item
 4. **Common underspecified areas**:
    - User types and permissions
+   - Default data location and filesystem permissions
    - Data retention/deletion policies  
    - Performance targets and scale
    - Error handling behaviors
@@ -55,7 +56,7 @@ When creating this spec from a user prompt:
 ## User Scenarios & Testing *(mandatory)*
 
 ### Primary User Story
-[Describe the main user journey in plain language]
+[Describe the CLI journey a user follows, including commands executed and resulting task state changes]
 
 ### Acceptance Scenarios
 1. **Given** [initial state], **When** [action], **Then** [expected outcome]
@@ -63,20 +64,20 @@ When creating this spec from a user prompt:
 
 ### Edge Cases
 - What happens when [boundary condition]?
-- How does system handle [error scenario]?
+- How does the CLI handle [error scenario] (e.g., missing JSON file, invalid flags)?
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- **FR-001**: CLI MUST allow users to add a task with title, optional description, and priority flags.
+- **FR-002**: CLI MUST list tasks filtered by status, priority, or emit `--json` machine output.
+- **FR-003**: CLI MUST let users complete a task by ID and stamp `completedAt`.
+- **FR-004**: CLI MUST delete the specified task and persist the updated JSON file atomically.
+- **FR-005**: CLI MUST exit with non-zero status and descriptive stderr when validation fails.
 
 *Example of marking unclear requirements:*
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+- **FR-006**: CLI MUST store tasks at [NEEDS CLARIFICATION: default path? allow overrides?].
+- **FR-007**: CLI MUST handle concurrent edits [NEEDS CLARIFICATION: is concurrency support required?].
 
 ### Key Entities *(include if feature involves data)*
 - **[Entity 1]**: [What it represents, key attributes without implementation]
